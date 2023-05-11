@@ -1,4 +1,4 @@
-# This is personal training repo on Nodejs and Express
+# This is a personal training repo on Nodejs and Express
 
 # It is Not for reviewing and not to be part of any evaluation
 
