@@ -6,19 +6,16 @@ const adminController = require("../controllers/admin");
 
 const router = express.Router();
 
-// /admin/add-product => GET
+router.get("/products", adminController.getProducts);
+
 router.get("/add-product", adminController.getAddProduct);
 
-// /admin/products => GET
-router.get("/products", adminController.getProductsSequelize);
+router.get("/edit-product/:productId", adminController.getEditProduct);
 
-// /admin/add-product => POST
-router.post("/add-product", adminController.postAddProductSequelize);
+router.post("/add-product", adminController.addProduct);
 
-router.get("/edit-product/:productId", adminController.getEditProductSequelize);
+router.post("/edit-product", adminController.editProduct);
 
-router.post("/edit-product", adminController.postEditProductSequelize);
-
-router.post("/delete-product", adminController.postDeleteProductSequelize);
+router.post("/delete-product", adminController.deleteProduct);
 
 module.exports = router;

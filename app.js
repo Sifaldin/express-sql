@@ -5,12 +5,8 @@ const bodyParser = require("body-parser");
 const errorController = require("./controllers/error");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
-const sequelize = require("./util/sequelize");
-const Item = require("./models/product-sequel");
+const { run } = require("./util/database");
 const User = require("./models/user");
-const Cart = require("./models/cart");
-const Product = require("./models/product");
-const CartItem = require("./models/cart-item");
 
 const app = express();
 
@@ -20,42 +16,22 @@ app.set("views", "views");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use((req, res, next) => {
-  User.findByPk(1).then((user) => {
-    req.user = user;
-    next();
-  });
+app.use(async (req, res, next) => {
+  User.save(new User("Sayf", "sayfmab@gmail.com", { products: [] }))
+    .then((user) => {
+      req.user = new User(user.name, user.email, user.cart, user._id);
+      next();
+    })
+    .catch((e) => console.log(e));
 });
-app.use("/admin", adminRoutes);
 app.use(shopRoutes);
+app.use("/admin", adminRoutes);
 app.use(errorController.get404);
 
-Item.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
-User.hasMany(Item);
-
-User.hasOne(Cart);
-Cart.belongsTo(User);
-
-Cart.belongsToMany(Item, { through: CartItem });
-Item.belongsToMany(Cart, { through: CartItem });
-
-sequelize
-  .sync()
+run()
   .then(() => {
-    return User.findByPk(1);
+    app.listen(3000, () => {
+      console.log("listening to port 3000");
+    });
   })
-  .then((user) => {
-    if (!user) {
-      return User.create({ name: "Max", email: "test@test.com" });
-    }
-    return user;
-  })
-  .then((user) => {
-    return user.createCart();
-  })
-  .then(() => {
-    app.listen(3000);
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+  .catch(console.dir);

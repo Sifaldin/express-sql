@@ -1,13 +1,10 @@
 const Product = require("../models/product");
-const Cart = require("../models/cart");
-const Item = require("../models/product-sequel");
-const CartItem = require("../models/cart-item");
 
 exports.getProducts = (req, res, next) => {
   Product.fetchAll()
-    .then(([rows, fieldData]) => {
+    .then((products) => {
       res.render("shop/product-list", {
-        prods: rows,
+        prods: products,
         pageTitle: "All Products",
         path: "/products",
       });
@@ -18,10 +15,10 @@ exports.getProducts = (req, res, next) => {
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product.findById(prodId)
-    .then(([row, fieldData]) => {
+    .then((product) => {
       res.render("shop/product-detail", {
-        product: row[0],
-        pageTitle: row[0].title,
+        product: product,
+        pageTitle: product.title,
         path: "/products",
       });
     })
@@ -30,9 +27,9 @@ exports.getProduct = (req, res, next) => {
 
 exports.getIndex = (req, res, next) => {
   Product.fetchAll()
-    .then(([rows, fieldData]) => {
+    .then((products) => {
       res.render("shop/index", {
-        prods: rows,
+        prods: products,
         pageTitle: "Shop",
         path: "/",
       });
@@ -40,72 +37,30 @@ exports.getIndex = (req, res, next) => {
     .catch((err) => console.log(err));
 };
 
-// ---------- SEQUELIZE IMPLEMENTATION ---------
-
-exports.getProductsSequelize = async (req, res, next) => {
-  const user = req.user;
-  const products = await user.getItems();
-  res.render("shop/product-list", {
-    prods: products,
-    pageTitle: "All Products",
-    path: "/products",
-  });
-};
-
-exports.getProductSequelize = async (req, res, next) => {
-  const prodId = req.params.productId;
-  const product = await Item.findByPk(prodId);
-  res.render("shop/product-detail", {
-    product: product,
-    pageTitle: product.title,
-    path: "/products",
-  });
-};
-
-exports.getIndexSequelize = async (req, res, next) => {
-  const user = req.user;
-  const products = await user.getItems();
-  res.render("shop/index", {
-    prods: products,
-    pageTitle: "Shop",
-    path: "/",
-  });
-};
-
 exports.getCart = async (req, res, next) => {
-  const user = req.user;
-  const cart = await user.getCart();
+  const { user } = req;
 
-  cart
-    .getItems()
-    .then((products) => {
-      res.render("shop/cart", {
-        path: "/cart",
-        pageTitle: "Your Cart",
-        products: products,
-      });
-    })
-    .catch((err) => console.log(err));
+  res.render("shop/cart", {
+    path: "/cart",
+    pageTitle: "Your Cart",
+    products: user.cart.products,
+  });
 };
 
 exports.postCart = async (req, res, next) => {
-  const prodId = req.body.productId;
-  const user = req.user;
-  const cart = await user.getCart();
-  const product = await Item.findByPk(prodId);
-  const products = await cart.getItems({ where: { id: prodId } });
-  const prevQuanittiy =
-    products && products.length > 0 ? products[0].cartItem.quantity : null;
+  const { body, user } = req;
 
-  return cart
-    .addItems(product, {
-      through: {
-        quantity: prevQuanittiy ? prevQuanittiy + 1 : 1,
-      },
+  return Product.findById(body.productId)
+    .then((product) => {
+      user
+        .addToCart(product)
+        .then(() => res.redirect("/cart"))
+        .catch((err) => console.log(err));
     })
-    .then(() => res.redirect("/cart"))
     .catch((err) => console.log(err));
 };
+
+/* 
 
 exports.postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
@@ -131,4 +86,5 @@ exports.getCheckout = (req, res, next) => {
     path: "/checkout",
     pageTitle: "Checkout",
   });
-};
+}; 
+*/

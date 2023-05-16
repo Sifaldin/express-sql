@@ -1,8 +1,8 @@
-const db = require("../util/database");
+const { getDb } = require("../util/database");
+const mongodb = require("mongodb");
 
 module.exports = class Product {
-  constructor(id, title, imageUrl, description, price) {
-    this.id = id;
+  constructor(title, imageUrl, description, price) {
     this.title = title;
     this.imageUrl = imageUrl;
     this.description = description;
@@ -10,22 +10,58 @@ module.exports = class Product {
   }
 
   save() {
-    db.execute(
-      `INSERT INTO products (title, price, description, imageUrl)
-    VALUES (?, ?, ?, ?)`,
-      [this.title, this.price, this.description, this.imageUrl]
-    );
+    const db = getDb();
+
+    return db
+      .collection("products")
+      .insertOne(this)
+      .then((res) => console.log(res))
+      .catch((e) => console.log(e));
   }
 
-  static deleteById(id) {
-    db.execute(`DELETE FROM products where id = ${id}`);
+  update(prodId) {
+    const db = getDb();
+
+    return db
+      .collection("products")
+      .updateOne({ _id: new mongodb.ObjectId(prodId) }, { $set: this })
+      .then((res) => console.log(res))
+      .catch((e) => console.log(e));
   }
 
   static fetchAll() {
-    return db.execute("SELECT * FROM products");
+    const db = getDb();
+
+    return db
+      .collection("products")
+      .find()
+      .toArray()
+      .then((products) => products)
+      .catch((e) => console.log(e));
   }
 
-  static findById(id) {
-    return db.execute(`SELECT * FROM products where id = ${id}`);
+  static findById(prodId) {
+    const db = getDb();
+
+    return db
+      .collection("products")
+      .find({ _id: new mongodb.ObjectId(prodId) })
+      .next()
+      .then((product) => {
+        return product;
+      })
+      .catch((e) => console.log(e));
+  }
+
+  static delete(prodId) {
+    const db = getDb();
+
+    return db
+      .collection("products")
+      .deleteOne({ _id: new mongodb.ObjectId(prodId) })
+      .then((product) => {
+        console.log(product);
+      })
+      .catch((e) => console.log(e));
   }
 };
